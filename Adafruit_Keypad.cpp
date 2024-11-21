@@ -24,12 +24,13 @@
 */
 /**************************************************************************/
 Adafruit_Keypad::Adafruit_Keypad(byte *userKeymap, byte *row, byte *col,
-                                 int numRows, int numCols) {
+                                 int numRows, int numCols, Adafruit_TCA8418 *tio) {
   _userKeymap = userKeymap;
   _row = row;
   _col = col;
   _numRows = numRows;
   _numCols = numCols;
+  _tio = tio;
 
   _keystates = NULL;
 }
@@ -68,16 +69,16 @@ volatile byte *Adafruit_Keypad::getKeyState(byte key) {
 void Adafruit_Keypad::tick() {
   uint8_t evt;
   for (int i = 0; i < _numCols; i++) {
-    digitalWrite(_col[i], HIGH);
+    _tio->digitalWrite(_col[i], HIGH);
   }
 
   int i = 0;
   for (int c = 0; c < _numCols; c++) {
-    digitalWrite(_col[c], LOW);
+    _tio->digitalWrite(_col[c], LOW);
     delayMicroseconds(_KEYPAD_SETTLING_DELAY);
     for (int r = 0; r < _numRows; r++) {
       i = r * _numCols + c;
-      bool pressed = !digitalRead(_row[r]);
+      bool pressed = !_tio->digitalRead(_row[r]);
       // Serial.print((int)pressed);
       volatile byte *state = _keystates + i;
       byte currentState = *state;
@@ -100,7 +101,7 @@ void Adafruit_Keypad::tick() {
       *state = currentState;
     }
     // Serial.println("");
-    digitalWrite(_col[c], HIGH);
+    _tio->digitalWrite(_col[c], HIGH);
   }
 }
 
@@ -114,12 +115,12 @@ void Adafruit_Keypad::begin() {
   memset((void *)_keystates, 0, _numRows * _numCols);
 
   for (int i = 0; i < _numCols; i++) {
-    pinMode(_col[i], OUTPUT);
-    digitalWrite(_col[i], HIGH);
+    _tio->pinMode(_col[i], OUTPUT);
+    _tio->digitalWrite(_col[i], HIGH);
   }
 
   for (int i = 0; i < _numRows; i++) {
-    pinMode(_row[i], INPUT_PULLUP);
+    _tio->pinMode(_row[i], INPUT_PULLUP);
   }
 }
 
